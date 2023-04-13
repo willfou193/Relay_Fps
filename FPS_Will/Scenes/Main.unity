@@ -1183,5 +1183,13 @@ PrefabInstance:
       propertyPath: m_Name
       value: NetworkManager
       objectReference: {fileID: 0}
+    - target: {fileID: 9148148664737879978, guid: 267a8241d15b11140a935993edf3c349, type: 3}
+      propertyPath: onlineScene
+      value: Assets/Fps-game/FPS_Will/Scenes/Main.unity
+      objectReference: {fileID: 0}
+    - target: {fileID: 9148148664737879978, guid: 267a8241d15b11140a935993edf3c349, type: 3}
+      propertyPath: offlineScene
+      value: Assets/Fps-game/FPS_Will/Scenes/GamesList.unity
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 267a8241d15b11140a935993edf3c349, type: 3}

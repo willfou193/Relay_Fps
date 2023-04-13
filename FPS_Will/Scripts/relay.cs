@@ -9,7 +9,13 @@ using System.Text.Json;
 public class relay : MonoBehaviour
 {
     private readonly HttpClient _httpClient = new HttpClient();
-
+    static bool QuitGame = false;
+    public int? authorization_token;
+    public long[] usersID;
+    public long? userID;
+    public string relayAddress;
+    public int relayGameServerPort;
+    public int relayGameClientPort;
     public async Task SendRequest(string token)
     {
         // Set the authorization header
@@ -19,8 +25,8 @@ public class relay : MonoBehaviour
         {
             users = new List<Users>
                           {
-                             new Users { ip = "10.10.10.11"},
-                             new Users { ip = "10.10.10.10"}
+                             new Users { ip = "74.15.154.180"},
+                             new Users { ip = "74.15.154.181"}
                           }
         };
         // Serialize the IP array to JSON
@@ -40,13 +46,22 @@ public class relay : MonoBehaviour
         var newResponse = await _httpClient.GetAsync("https://api.edgegap.com/v1/relays/sessions/" + content.session_id);
         var newResponseContent = await newResponse.Content.ReadAsStringAsync();
         var data = JsonConvert.DeserializeObject<ApiResponse>(newResponseContent);
-
+        
         if (data.ready)
         {
+            authorization_token = data.authorization_token;
 
+            userID = data.session_users[0].authorization_token;
+            relayAddress = data.relay.ip;
+            relayGameServerPort = data.relay.ports.server.port;
+            relayGameClientPort = data.relay.ports.client.port;
             Debug.Log($"We are ready to enter the Session ID and User ID!!");
-            print("Here is your Session_ID : " + data.session_id);
-            print("Here is your Token to enter : " + data.authorization_token);
+            print("Here is your Authorization token : " + data.authorization_token);
+            print("Here is the authorization token : " + data.session_users[0].authorization_token + " and " + data.session_users[1].authorization_token);
+            print("Relay IP : " + data.relay.ip);
+            print("Relay Server ports : " + data.relay.ports.server.port);
+            print("Relay Client ports : " + data.relay.ports.client.port);
+            await WaitingForDisconnect(_httpClient, content, content.session_id);
         }
         else
         {
@@ -61,7 +76,7 @@ public class relay : MonoBehaviour
         while (!content.ready)
         {
             Debug.Log("Waiting for data to be ready...");
-            await Task.Delay(3000); // Wait 5 seconds between each iteration
+            await Task.Delay(3000); // Wait 3 seconds between each iteration
             var response = await client.GetAsync("https://api.edgegap.com/v1/relays/sessions/" + sessionId);
             var responseContent = await response.Content.ReadAsStringAsync();
             print("Response from client -----------" + responseContent);
@@ -73,21 +88,27 @@ public class relay : MonoBehaviour
         // The "ready" property is now true, output a message
         Debug.Log("Data is now ready!");
     }
-    private async void DeleteSessionAsync(string sessionId)
+    public static async Task WaitingForDisconnect(HttpClient client, ApiResponse content, string sessionId)
     {
-        using (var httpClient = new HttpClient())
+        while (!QuitGame)
         {
-            var response = await httpClient.DeleteAsync($"https://myapi.com/session/{sessionId}");
-
-            if (response.IsSuccessStatusCode)
-            {
-                Debug.Log("Session deleted successfully.");
-            }
-            else
-            {
-                Debug.LogError($"Failed to delete session. Status code: {response.StatusCode}");
-            }
+            await Task.Delay(5000);
         }
+        
+        var response = await client.DeleteAsync($"https://api.edgegap.com/v1/relays/sessions/" + sessionId);
+
+        if (response.IsSuccessStatusCode)
+        {
+            Debug.Log("Session deleted successfully.");
+        }
+        else
+        {
+            Debug.LogError($"Failed to delete session. Status code: {response.StatusCode}");
+        }
+    }
+    private void OnApplicationQuit()
+    {
+        QuitGame = true;
     }
 }
 public class Users
@@ -101,7 +122,7 @@ public class RootObject
 }
 public class Client
 {
-    public int? port { get; set; }
+    public int port { get; set; }
     public string protocol { get; set; }
     public string link { get; set; }
 }
@@ -122,7 +143,7 @@ public class Relay
 public class ApiResponse
 {
     public string session_id { get; set; }
-    public long? authorization_token { get; set; }
+    public int? authorization_token { get; set; }
     public string status { get; set; }
     public bool ready { get; set; }
     public bool linked { get; set; }
@@ -134,7 +155,7 @@ public class ApiResponse
 
 public class Server
 {
-    public int? port { get; set; }
+    public int port { get; set; }
     public string protocol { get; set; }
     public string link { get; set; }
 }
